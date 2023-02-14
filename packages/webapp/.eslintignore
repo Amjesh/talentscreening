@@ -1,7 +1,0 @@
-# Ignore directories
-node_modules
-.next
-jest.config.js
-jest.setup.js
-out
-next.config.js
