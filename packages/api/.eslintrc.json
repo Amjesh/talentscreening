@@ -1,0 +1,28 @@
+{
+  "env": {
+    "browser": true,
+    "commonjs": true,
+    "es2021": true
+  },
+  "extends": [
+    "standard-with-typescript",
+    "plugin:@hapi/recommended",
+    "plugin:@hapi/module"
+  ],
+  "overrides": [],
+  "parserOptions": {
+    "ecmaVersion": "latest"
+  },
+  "plugins": ["@hapi/eslint-plugin-hapi"],
+  "rules": {
+    "semi": [2, "always"],
+    "indent": ["error", 2],
+    "@typescript-eslint/quotes": [
+      "error",
+      "single",
+      {
+        "allowTemplateLiterals": true
+      }
+    ]
+  }
+}
