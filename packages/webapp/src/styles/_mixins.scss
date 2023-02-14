@@ -1,0 +1,31 @@
+// Slightly lighten a color
+// @access public
+// @param {Color} $color - color to tint
+// @param {Number} $percentage - percentage of `$color` in returned color
+// @return {Color}
+@function tint($color, $percentage) {
+  @return mix(white, $color, $percentage);
+}
+
+// Slightly darken a color
+// @access public
+// @param {Color} $color - color to shade
+// @param {Number} $percentage - percentage of `$color` in returned color
+// @return {Color}
+@function shade($color, $percentage) {
+  @return mix(black, $color, $percentage);
+}
+
+// Create responsive
+// @access public
+// @param {Breakpoint} $breakpoint - screen size
+// @return {Content}
+@mixin responsive($breakpoint) {
+  // If the key exists in the map
+  @if map-has-key($grid-breakpoints, $breakpoint) {
+    // Prints a media query based on the value
+    @media only screen and (max-width: map-get($grid-breakpoints, $breakpoint)) {
+      @content;
+    }
+  }
+}

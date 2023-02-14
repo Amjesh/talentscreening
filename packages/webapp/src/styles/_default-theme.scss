@@ -1,0 +1,80 @@
+/* make the customizations */
+$primary: #091926 !default;
+$secondary: #2cb6f5 !default;
+$success: #00ff00 !default;
+$info: #00ffff !default;
+$warning: #ffff00 !default;
+$danger: #ff0000 !default;
+$light: #808080 !default;
+$dark: #1d272c !default;
+$white: #ffffff !default;
+$black: #000000 !default;
+
+$theme-colors: (
+  "primary": $primary,
+  "secondary": $secondary,
+  "success": $success,
+  "info": $info,
+  "warning": $warning,
+  "danger": $danger,
+  "light": $light,
+  "dark": $dark,
+);
+
+$navbar-light-color: $white;
+$navbar-light-hover-color: $light;
+$navbar-light-active-color: $light;
+$navbar-light-toggler-border-color: $white;
+$offcanvas-bg-color: $primary;
+
+$grid-breakpoints: (
+  xs: 0,
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+  xxl: 1400px,
+) !default;
+
+// scss-docs-start spacer-variables-maps
+$spacer: 1rem !default;
+$spacers: (
+  0: 0,
+  1: $spacer * 0.25,
+  2: $spacer * 0.5,
+  3: $spacer,
+  4: $spacer * 1.5,
+  5: $spacer * 3,
+) !default;
+
+$position-values: (
+  0: 0,
+  50: 50%,
+  100: 100%,
+) !default;
+
+$border-widths: (
+  1: 1px,
+  2: 2px,
+  3: 3px,
+  4: 4px,
+  5: 5px,
+) !default;
+
+// scss-docs-start aspect-ratios
+$aspect-ratios: (
+  "1x1": 100%,
+  "4x3": calc(3 / 4 * 100%),
+  "16x9": calc(9 / 16 * 100%),
+  "21x9": calc(9 / 21 * 100%),
+) !default;
+
+/* Overwrite BS offcanvas close button*/
+.offcanvas-header {
+  .btn-close {
+    background: transparent
+      url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e")
+      center/1em auto no-repeat;
+    opacity: 1;
+  }
+}

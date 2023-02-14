@@ -1,0 +1,57 @@
+#!/bin/bash
+
+
+AWS_PROFILE="359934747299"
+PROJECT_PATH="activate"
+
+SCRIPT=`realpath -s $0`
+CWD=`dirname $SCRIPT`
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+AWS_REGION=eu-west-2
+REPO_NAME=im-api
+IMAGE_REPO_NAME="${REPO_NAME}"
+IMAGE_TAG=$(git rev-parse --short HEAD)
+ECR_REPO_URL=${AWS_PROFILE}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}
+
+echo "**************************************"
+echo "* REVIEW DETAILS BEFORE YOU PROCEED! *"
+echo "**************************************"
+echo "CWD: ${CWD}"
+echo "BRANCH: ${BRANCH}"
+echo "PROJECT_PATH: ${PROJECT_PATH}"
+echo "AWS_PROFILE: ${AWS_PROFILE}"
+echo "AWS_REGION: ${AWS_REGION}"
+echo "PACKAGE: ${PACKAGE}"
+echo "IMAGE_REPO_NAME: ${IMAGE_REPO_NAME}"
+echo "IMAGE_TAG: ${IMAGE_TAG}"
+echo "ECR_REPO_URL: ${ECR_REPO_URL}"
+echo ""
+
+while true; do
+    read -p "Do you wish to continue? " yn
+    case $yn in
+        [Yy]* ) break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+echo Login to ECR
+aws ecr get-login-password --profile ${AWS_PROFILE} | docker login --username AWS --password-stdin $ECR_REPO_URL
+
+cd $CWD
+echo "entering ./packages/api"
+cd packages/api
+
+echo Build started on `date`
+echo Building the Docker image...
+docker build --file Dockerfile-multienv -t $IMAGE_REPO_NAME:$IMAGE_TAG -t $IMAGE_REPO_NAME:latest .
+docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $ECR_REPO_URL:$IMAGE_TAG
+docker tag $IMAGE_REPO_NAME:latest $ECR_REPO_URL:latest
+
+echo Build completed on `date`
+
+# Push image to ECR
+echo Pushing the Docker images...
+docker push $ECR_REPO_URL:$IMAGE_TAG
+docker push $ECR_REPO_URL:latest

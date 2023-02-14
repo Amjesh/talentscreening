@@ -1,0 +1,165 @@
+#!/bin/bash
+
+if [[ $1 = "" && $2 = "" || $2 = "" || $1 = "help" ]]; then
+  echo "use: deploy [api|webapp|im-api] [build|publish]"
+  echo ""
+  echo "The scripts is aware of the branch:"
+  echo "- 'main' will deploy to *development* environment"
+  echo "- 'staging' will deploy to *staging* environment"
+  echo "- 'production' will deploy to *production* environment"
+  exit 1
+fi
+
+# Validate input arguments
+if [[ $1 = "api" || $1 = "webapp" || $1 = "im-api" ]]; then
+  PACKAGE=$1
+else
+  echo "Unsupported package! ${1}"
+  echo "Please choose [api|webapp|im-api]"
+  exit 1
+fi
+
+if [[ $2 = "build" || $2 = "publish" ]]; then
+  COMMAND=$2
+else
+  echo "Unsupported command! ${2}"
+  echo "Please choose [build|publish]"
+  exit 1
+fi
+
+if [[ $3 = "dev" || $3 = "stage" || $3 = "prod" ]]; then
+  ENV=$3
+elif [[ $3 = "" ]]; then
+  # Validate branch
+  BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+  if [[ $BRANCH = "main" || $BRANCH = "staging" || $BRANCH = "production" ]]; then
+    if [[ $BRANCH = "main" ]]; then
+      ENV=dev
+    fi
+    if [[ $BRANCH = "staging" ]]; then
+      ENV=stage
+    fi
+    if [[ $BRANCH = "production" ]]; then
+      ENV=prod
+    fi
+  else
+    echo "Deploy not allowed from '${BRANCH}' branch!"
+    echo "Please switch to [main|staging|production] branch"
+    exit 1
+  fi
+else
+  echo "Unsupported env! ${3}"
+  echo "Please choose [dev|stage|prod]"
+  exit 1
+fi
+
+
+CWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+AWS_PROFILE="607018837836"
+AWS_REGION=eu-west-2
+REPO_NAME=${PACKAGE}
+IMAGE_REPO_NAME="${ENV}/${REPO_NAME}"
+IMAGE_TAG=$(git rev-parse --short HEAD)
+ECR_REPO_URL=${AWS_PROFILE}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}
+
+if [[ $COMMAND = "build" ]]; then
+
+  echo "**************************************"
+  echo "* REVIEW DETAILS BEFORE YOU PROCEED! *"
+  echo "*         DEPLOYING TO ECR           *"
+  echo "**************************************"
+  echo "CWD: ${CWD}"
+  echo "BRANCH: ${BRANCH}"
+  echo "AWS_PROFILE: ${AWS_PROFILE}"
+  echo "AWS_REGION: ${AWS_REGION}"
+  echo "ENV: ${ENV}"
+  echo "PACKAGE: ${PACKAGE}"
+  echo "IMAGE_REPO_NAME: ${IMAGE_REPO_NAME}"
+  echo "IMAGE_TAG: ${IMAGE_TAG}"
+  echo "ECR_REPO_URL: ${ECR_REPO_URL}"
+  echo ""
+
+  while true; do
+      read -p "Do you wish to continue? " yn
+      case $yn in
+          [Yy]* ) break;;
+          [Nn]* ) exit;;
+          * ) echo "Please answer yes or no.";;
+      esac
+  done
+
+  echo Login to ECR
+  aws ecr get-login-password --profile ${AWS_PROFILE} --region ${AWS_REGION}| docker login --username AWS --password-stdin $ECR_REPO_URL
+
+  cd $CWD
+  echo "entering ./packages/${PACKAGE}"
+  cd ./packages/${PACKAGE}
+
+  DOCKER_FILE=Dockerfile
+
+  if [[ $PACKAGE = "webapp" ]]; then
+    echo "Copying webapp NextJS .env file before build..."
+    cp ./.env.${ENV} ./.env.local
+  fi
+
+  if [[ $PACKAGE = "im-api" ]]; then
+    DOCKER_FILE=Dockerfile-multienv
+  fi
+
+  echo Build started on `date`
+  echo Building the Docker image...
+  docker build --file $DOCKER_FILE --build-arg ENV=${ENV} -t $IMAGE_REPO_NAME:$IMAGE_TAG -t $IMAGE_REPO_NAME:latest .
+  docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $ECR_REPO_URL:$IMAGE_TAG
+  docker tag $IMAGE_REPO_NAME:latest $ECR_REPO_URL:latest
+
+  echo Build completed on `date`
+
+  # Push image to ECR
+  echo Pushing the Docker images...
+  docker push $ECR_REPO_URL:$IMAGE_TAG
+  docker push $ECR_REPO_URL:latest
+fi
+
+
+if [[ $COMMAND = "publish" ]]; then
+  echo "**************************************"
+  echo "* REVIEW DETAILS BEFORE YOU PROCEED! *"
+  echo "*         PUBLISHING TO ECS          *"
+  echo "**************************************"
+  echo "CWD: ${CWD}"
+  echo "BRANCH: ${BRANCH}"
+  echo "AWS_PROFILE: ${AWS_PROFILE}"
+  echo "AWS_REGION: ${AWS_REGION}"
+  echo "ENV: ${ENV}"
+  echo "PACKAGE: ${PACKAGE}"
+  echo "IMAGE_REPO_NAME: ${IMAGE_REPO_NAME}"
+  echo "IMAGE_TAG: ${IMAGE_TAG}"
+  echo "ECR_REPO_URL: ${ECR_REPO_URL}"
+  echo ""
+
+  while true; do
+      read -p "Do you wish to continue? " yn
+      case $yn in
+          [Yy]* ) break;;
+          [Nn]* ) exit;;
+          * ) echo "Please answer yes or no.";;
+      esac
+  done
+  cd $CWD
+  
+  # Start ECS service via Terraform
+  echo "entering ./terraform/${PACKAGE}"
+  cd terraform/${PACKAGE}
+
+
+  echo "Reset Terraform"
+  rm -rf .terraform
+
+  echo "Run Terraform init"
+  terraform init -backend-config=config/${ENV}/backend.hcl
+
+  echo "Run Terraform apply"
+  terraform apply -var-file=./config/${ENV}/terraform.tfvars
+fi

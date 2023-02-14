@@ -1,0 +1,27 @@
+{
+  "name": "playerstate",
+  "private": true,
+  "version": "1.0.0",
+  "description": "playerstate project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "lerna init && husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ActivateMedia/playerstate.git"
+  },
+  "author": "Activate",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ActivateMedia/playerstate/issues"
+  },
+  "homepage": "https://github.com/ActivateMedia/playerstate#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^17.0.2",
+    "@commitlint/config-conventional": "^17.0.2",
+    "husky": "^8.0.1",
+    "lerna": "^5.6.2"
+  }
+}

@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+#
+# Usage:
+#
+# Encrypt a string:
+# kms-vault encrypt My-Key-Alias "some-string-i-want-encrypted"
+#
+# Decrypt a string:
+# kms-vault decrypt "blob"
+#
+
+#
+# Requirements: AWS CLI, jq
+#
+# Your AWS profile / default profile needs to have access to the KMS key you want to use
+# and the kms:ListAliases permission.
+#
+
+set -eu -o pipefail
+
+command=$1
+
+if [[ $command = "encrypt" ]]; then
+    key_alias="$2"
+    key_info=$(aws kms list-aliases | jq -r ".Aliases[] | select(.AliasName | contains (\"$key_alias\"))")
+    echo "Using key:" 1>&2
+    echo "$key_info" | jq 1>&2
+    key_id=$(echo "$key_info" | jq -r .TargetKeyId)
+    plaintext_path="$3"
+    aws kms encrypt --key-id "$key_id" --plaintext fileb://<(echo -n "$plaintext_path") --query CiphertextBlob --output text
+    exit 0
+elif [[ $command = "decrypt" ]]; then
+    ciphertext_path="$2"
+    aws kms decrypt --ciphertext-blob fileb://<(echo $ciphertext_path | base64 --decode) --output text --query Plaintext | base64 --decode
+    exit 0
+else
+    echo "Unknown command: $command"
+    exit 1
+fi
